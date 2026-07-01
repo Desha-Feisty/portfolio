@@ -1,0 +1,21 @@
+# Ignore everything by default
+*
+
+# Allow traversing directories
+!*/
+
+# Re-ignore node_modules (un-ignored by !*/)
+node_modules
+
+# Whitelist files required to run the project
+!.gitignore
+!mostafa-portfolio.html
+!logos/logo-express.png
+!package.json
+!package-lock.json
+!.babelrc
+!tailwind.config.js
+!src/app.js
+!src/app.jsx
+!src/input.css
+!src/styles.css
