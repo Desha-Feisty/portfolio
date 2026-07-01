@@ -15,7 +15,5 @@ node_modules
 !package-lock.json
 !.babelrc
 !tailwind.config.js
-!src/app.js
 !src/app.jsx
 !src/input.css
-!src/styles.css

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "babel src/app.jsx -o src/app.js && tailwindcss -i src/input.css -o src/styles.css"
+    "build": "babel src/app.jsx -o dist/app.js && tailwindcss -i src/input.css -o dist/styles.css && cp mostafa-portfolio.html dist/ && cp -r logos dist/"
   },
   "devDependencies": {
     "@babel/cli": "^7.29.0",
