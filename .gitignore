@@ -17,3 +17,4 @@ node_modules
 !tailwind.config.js
 !src/app.jsx
 !src/input.css
+!_headers
