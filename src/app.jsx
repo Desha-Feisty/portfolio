@@ -149,121 +149,13 @@ function ScrollProgress() {
   return <div className="progress-bar" style={{ transform: `scaleX(${progress})` }} />;
 }
 
-/* Scroll-driven section transition — dramatic clip-path/blur/scale reveal between sections */
-function useSectionScroll(ref) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (REDUCED_MOTION) {
-      el.style.opacity = '1';
-      el.style.transform = 'none';
-      el.style.filter = 'none';
-      el.style.clipPath = 'none';
-      return;
-    }
-
-    const update = () => {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const top = rect.top;
-      const bottom = rect.bottom;
-      if (rect.height === 0) return;
-
-      const progress = Math.max(0, Math.min(1, 1 - top / vh));
-      const exitProgress = Math.max(0, Math.min(1, -top / rect.height));
-      const visibility = Math.min(1, progress * (1 - exitProgress * 0.7));
-
-      const scale = 0.85 + visibility * 0.15;
-      const translateY = (1 - visibility) * 60;
-      const blur = Math.max(0, (1 - visibility) * 2);
-      const clipAmount = (1 - visibility) * 100;
-
-      el.style.opacity = visibility;
-      el.style.transform = `translateY(${translateY}px) scale(${scale})`;
-      el.style.filter = `blur(${blur}px)`;
-      el.style.clipPath = `inset(${clipAmount}% 0% 0% 0%)`;
-    };
-
-    const onLenisScroll = () => { update(); };
-    if (window.lenis) {
-      window.lenis.on('scroll', onLenisScroll);
-    } else {
-      window.addEventListener('scroll', update, { passive: true });
-    }
-
-    update();
-
-    return () => {
-      if (window.lenis) window.lenis.off('scroll', onLenisScroll);
-      window.removeEventListener('scroll', update);
-      el.style.willChange = '';
-      el.style.filter = '';
-      el.style.clipPath = '';
-    };
-  }, []);
-}
-
-/* Lightweight reveal — native IntersectionObserver + CSS transitions (no JS animation per frame) */
-function useReveal(options = {}) {
-  const ref = useRef(null);
-  const [vis, setVis] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        /* Defer one frame so browser paints the hidden state first */
-        requestAnimationFrame(() => setVis(true));
-        if (options.once !== false) obs.unobserve(el);
-      }
-    }, { rootMargin: options.margin || '-120px', threshold: 0 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [options.margin, options.once]);
-  return [ref, vis];
-}
-
-function Reveal({ children, delay = 0, className = '' }) {
-  const [ref, vis] = useReveal({ margin: '-80px' });
-  return (
-    <div
-      ref={ref}
-      className={`reveal-section ${vis ? 'reveal-visible' : 'reveal-hidden'} ${className}`}
-      style={{ transitionDelay: `${delay}s` }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function RevealStagger({ children, delay = 0, className = '' }) {
-  const [ref, vis] = useReveal({ margin: '-60px', once: true });
-  const total = React.Children.count(children);
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{ '--stagger-total': total, '--stagger-base': delay }}
-    >
-      {React.Children.map(children, (child, i) => (
-        <div style={{ '--item-delay': `${delay + i * 0.08}s`, transitionDelay: `${delay + i * 0.08}s` }}
-             className={`reveal-item ${vis ? 'reveal-item-visible' : 'reveal-item-hidden'}`}>
-          {child}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RevealItem({ children }) {
-  const [ref, vis] = useReveal({ once: true, margin: '-40px' });
-  return (
-    <div ref={ref}
-         className={`reveal-item ${vis ? 'reveal-item-visible' : 'reveal-item-hidden'}`}>
-      {children}
-    </div>
-  );
-}
+/* Animation presets for entrance animations */
+const fadeSlideUp = { initial: { opacity: 0, y: 60 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: false, margin: '-80px' }, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } };
+const fadeSlideLeft = { initial: { opacity: 0, x: -50 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: false, margin: '-80px' }, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } };
+const fadeSlideUpSmall = { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: false, margin: '-60px' }, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } };
+/* Stagger helpers — pass as variants to motion.div, child gets variant */
+const staggerContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
+const staggerItem = { hidden: { opacity: 0, y: 30, scale: 0.93 }, visible: { opacity: 1, y: 0, scale: 1 } };
 
 function CountUp({ end, duration = 2000, suffix = '', prefix = '' }) {
   const ref = useRef(null);
@@ -473,17 +365,14 @@ function About() {
   ];
 
   return (
-    <section className="relative py-28 px-6">
+    <motion.section {...fadeSlideUp} className="relative py-28 px-6">
       <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <h2 className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
-            About Me
-          </h2>
-          <div className="w-16 h-1 bg-neon rounded-full mb-12" />
-        </Reveal>
-
+        <motion.h2 {...fadeSlideLeft} className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
+          About Me
+        </motion.h2>
+        <div className="w-16 h-1 bg-neon rounded-full mb-12" />
         <div className="grid md:grid-cols-2 gap-12 items-center">
-          <Reveal delay={0.1}>
+          <motion.div {...fadeSlideUpSmall}>
             <div className="space-y-5 text-txtsecondary leading-relaxed">
               <p className="text-lg">
                 Backend developer with hands-on project experience building scalable REST APIs, real-time systems, and AI-integrated backend services using Node.js, TypeScript, Express, and MongoDB.
@@ -495,24 +384,23 @@ function About() {
                 Skilled in JWT/OAuth authentication, Role-Based Access Control, OWASP security principles, Redis caching, and Dockerized CI/CD deployments. Committed to writing secure, production-ready code with strong attention to performance, maintainability, and clean architecture.
               </p>
             </div>
-          </Reveal>
-
-          <Reveal delay={0.3}>
+          </motion.div>
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: false, margin: '-60px' }}>
             <div className="grid grid-cols-2 gap-4">
               {stats.map((s, i) => (
-                <div key={i} className="bg-surfaced border border-border rounded-lg p-6 text-center hover:border-neon/40 transition-all duration-300">
+                <motion.div key={i} variants={staggerItem} className="bg-surfaced border border-border rounded-lg p-6 text-center hover:border-neon/40 transition-all duration-300">
                   <div className="text-3xl md:text-4xl font-black text-electric mb-1 leading-tight break-words">
                     {typeof s.value === 'number' ? <CountUp end={s.value} /> : s.value}
                     {s.suffix}
                   </div>
                   <div className="text-xs text-txtsecondary uppercase tracking-widest">{s.label}</div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </Reveal>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -545,44 +433,39 @@ function Skills() {
   ];
 
   return (
-    <section className="relative py-28 px-6">
+    <motion.section {...fadeSlideUp} className="relative py-28 px-6">
       <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <h2 className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
-            Tech Stack
-          </h2>
-          <div className="w-16 h-1 bg-neon rounded-full mb-12" />
-        </Reveal>
-
+        <motion.h2 {...fadeSlideLeft} className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
+          Tech Stack
+        </motion.h2>
+        <div className="w-16 h-1 bg-neon rounded-full mb-12" />
         <div className="space-y-12">
           {skillGroups.map((group, gi) => (
-            <Reveal key={gi} delay={gi * 0.1}>
+            <motion.div key={gi} {...fadeSlideUpSmall}>
               <div>
                 <motion.h3
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-className="text-sm font-mono text-electric tracking-widest uppercase mb-4"
-                  >
-                    {group.category}
+                  className="text-sm font-mono text-electric tracking-widest uppercase mb-4"
+                >
+                  {group.category}
                 </motion.h3>
-                <RevealStagger>
+                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: false, margin: '-40px' }}>
                   <div className="flex flex-wrap gap-3">
                     {group.items.map((skill) => (
-                      <RevealItem key={skill}>
-                        <div className="badge flex items-center gap-2 px-4 py-2 bg-surfaced border border-border rounded-lg text-sm text-txtsecondary cursor-default">
-                          <span className="font-medium">{skill}</span>
-                        </div>
-                      </RevealItem>
+                      <motion.div key={skill} variants={staggerItem} className="badge flex items-center gap-2 px-4 py-2 bg-surfaced border border-border rounded-lg text-sm text-txtsecondary cursor-default">
+                        <span className="font-medium">{skill}</span>
+                      </motion.div>
                     ))}
                   </div>
-                </RevealStagger>
+                </motion.div>
               </div>
-            </Reveal>
+            </motion.div>
           ))}
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -647,7 +530,7 @@ function Projects() {
     };
 
     return (
-      <RevealItem>
+      <motion.div variants={staggerItem}>
         <a href={project.url} target="_blank" rel="noopener noreferrer">
           <div
             ref={cardRef}
@@ -684,27 +567,24 @@ function Projects() {
             </div>
           </div>
         </a>
-      </RevealItem>
+      </motion.div>
     );
   };
 
   return (
-    <section className="relative py-28 px-6">
+    <motion.section {...fadeSlideUp} className="relative py-28 px-6">
       <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <h2 className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
-            Projects
-          </h2>
-          <div className="w-16 h-1 bg-neon rounded-full mb-12" />
-        </Reveal>
-
-        <RevealStagger delay={0.1}>
+        <motion.h2 {...fadeSlideLeft} className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
+          Projects
+        </motion.h2>
+        <div className="w-16 h-1 bg-neon rounded-full mb-12" />
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: false, margin: '-60px' }}>
           <div className="grid md:grid-cols-2 gap-6 tilt-wrap">
             {projects.map((p, i) => <Card key={i} project={p} index={i} />)}
           </div>
-        </RevealStagger>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -733,30 +613,27 @@ function CoreCompetencies() {
   ];
 
   return (
-    <section className="relative py-28 px-6">
+    <motion.section {...fadeSlideUp} className="relative py-28 px-6">
       <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <h2 className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
-            Core Competencies
-          </h2>
-          <div className="w-16 h-1 bg-neon rounded-full mb-12" />
-        </Reveal>
-
-        <RevealStagger delay={0.1}>
+        <motion.h2 {...fadeSlideLeft} className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
+          Core Competencies
+        </motion.h2>
+        <div className="w-16 h-1 bg-neon rounded-full mb-12" />
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: false, margin: '-60px' }}>
           <div className="grid md:grid-cols-2 gap-6 tilt-wrap">
             {competencies.map((c, i) => (
-              <RevealItem key={i}>
+              <motion.div key={i} variants={staggerItem}>
                 <div className="bg-surfaced border border-border rounded-lg p-8 hover:border-electric/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
                   <div className="text-xs font-mono text-neon/50 tracking-widest mb-3">{c.icon}</div>
                   <h3 className="text-xl font-bold text-txtprimary mb-3">{c.title}</h3>
                   <p className="text-txtsecondary leading-relaxed">{c.text}</p>
                 </div>
-              </RevealItem>
+              </motion.div>
             ))}
           </div>
-        </RevealStagger>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -819,25 +696,22 @@ function Contact() {
   };
 
   return (
-    <section className="relative py-28 px-6">
+    <motion.section {...fadeSlideUp} className="relative py-28 px-6">
       <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <h2 className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
-            Get In Touch
-          </h2>
-          <div className="w-16 h-1 bg-neon rounded-full mb-12" />
-        </Reveal>
-
+        <motion.h2 {...fadeSlideLeft} className="text-3xl md:text-5xl font-black text-txtprimary mb-4">
+          Get In Touch
+        </motion.h2>
+        <div className="w-16 h-1 bg-neon rounded-full mb-12" />
         <div className="grid md:grid-cols-2 gap-12">
-          <Reveal delay={0.1}>
+          <motion.div {...fadeSlideUpSmall}>
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
               {['name', 'email', 'message'].map((field) => (
                 <div key={field} className="relative">
                   <label
                     htmlFor={field}
                     className={`absolute left-4 transition-all duration-300 pointer-events-none ${
-focusedField === field || formState[field]
-                      ? '-top-2.5 text-xs text-electric bg-dark px-1'
+                      focusedField === field || formState[field]
+                        ? '-top-2.5 text-xs text-electric bg-dark px-1'
                         : 'top-3.5 text-sm text-txtsecondary'
                     }`}
                   >
@@ -869,7 +743,6 @@ focusedField === field || formState[field]
                   )}
                 </div>
               ))}
-
               <button
                 type="submit"
                 disabled={submitting}
@@ -882,39 +755,39 @@ focusedField === field || formState[field]
                 {submitting ? 'Sending...' : 'Send Message'}
               </button>
             </form>
-          </Reveal>
-
-          <Reveal delay={0.3}>
+          </motion.div>
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: false, margin: '-60px' }}>
             <div className="flex flex-col justify-center gap-8">
-              <div>
+              <motion.div variants={staggerItem}>
                 <h3 className="text-lg font-semibold text-txtprimary mb-2">Let's build something together</h3>
                 <p className="text-txtsecondary leading-relaxed">
                   Whether it's a full-stack application, a real-time system, or AI integration, I'm always open to discussing new projects and opportunities.
                 </p>
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                {socials.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 px-5 py-3 border border-border rounded-lg text-txtsecondary hover:text-electric hover:border-electric/40 transition-all duration-300 group"
-                    aria-label={s.label}
-                  >
-                    <span className="w-8 h-8 flex items-center justify-center rounded bg-electric/10 text-electric group-hover:bg-electric/20 group-hover:scale-110 transition-all duration-200">
-                      <SocialIcon label={s.label} />
-                    </span>
-                    <span className="text-sm font-medium">{s.label}</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                  </a>
-                ))}
-              </div>
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <div className="flex flex-wrap gap-4">
+                  {socials.map((s) => (
+                    <a
+                      key={s.label}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-5 py-3 border border-border rounded-lg text-txtsecondary hover:text-electric hover:border-electric/40 transition-all duration-300 group"
+                      aria-label={s.label}
+                    >
+                      <span className="w-8 h-8 flex items-center justify-center rounded bg-electric/10 text-electric group-hover:bg-electric/20 group-hover:scale-110 transition-all duration-200">
+                        <SocialIcon label={s.label} />
+                      </span>
+                      <span className="text-sm font-medium">{s.label}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200">
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </motion.div>
             </div>
-          </Reveal>
+          </motion.div>
         </div>
       </div>
       <AnimatePresence>
@@ -937,7 +810,7 @@ focusedField === field || formState[field]
           </motion.div>
         )}
       </AnimatePresence>
-    </section>
+    </motion.section>
   );
 }
 
@@ -996,12 +869,13 @@ function SectionDivider() {
 }
 
 function Footer() {
-  const [ref, vis] = useReveal({ once: true, margin: '-60px' });
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
   return (
     <motion.footer
       ref={ref}
       initial={{ opacity: 0 }}
-      animate={vis ? { opacity: 1 } : {}}
+      animate={isInView ? { opacity: 1 } : {}}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="relative border-t border-border py-8 px-6"
     >
@@ -1033,15 +907,9 @@ function Footer() {
 
 /* React.memo not needed — App has no re-renders to skip */
 
-/* Wraps sections with continuous scroll-driven transition between them */
-function SectionWrapper({ children, id, className = '' }) {
-  const ref = useRef(null);
-  useSectionScroll(ref);
-  return (
-    <div ref={ref} id={id} className={`section-scroll-wrap ${className}`}>
-      {children}
-    </div>
-  );
+/* Wraps sections with id for nav anchor */
+function SectionWrapper({ children, id }) {
+  return <div id={id}>{children}</div>;
 }
 
 function App() {

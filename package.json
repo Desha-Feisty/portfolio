@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "babel src/app.jsx -o dist/app.js && tailwindcss -i src/input.css -o dist/styles.css && cp mostafa-portfolio.html dist/index.html && cp _headers dist/ && cp -r logos dist/ && cp -r .well-known dist/"
+    "build": "babel src/app.jsx -o dist/app.js && tailwindcss -i src/input.css -o dist/styles.css && node -e \"require('fs').cpSync('mostafa-portfolio.html','dist/index.html');require('fs').cpSync('_headers','dist/_headers');require('fs').cpSync('logos','dist/logos',{recursive:true})\""
   },
   "devDependencies": {
     "@babel/cli": "^7.29.0",
     "@babel/core": "^7.29.0",
     "@babel/preset-react": "^7.29.0",
+    "serve": "^14.2.6",
     "tailwindcss": "^3.4.0"
   }
 }
