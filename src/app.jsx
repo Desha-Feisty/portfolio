@@ -301,18 +301,17 @@ function Hero() {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="mb-8"
         >
-           <div
-              className="w-36 h-36 mx-auto rounded-full overflow-hidden border-2 border-neon/30 logo-glow relative"
-              style={{ willChange: 'transform' }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
-            >
-            <img
-              src="logos/logo-express.png"
-              alt="Mostafa Abohamar Logo"
-              className="w-full h-full object-contain p-2"
-            />
-          </div>
+           <motion.div
+               className="w-36 h-36 sm:w-48 sm:h-48 mx-auto logo-glow relative"
+               animate={{ y: [0, -8, 0] }}
+               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+             >
+             <img
+               src="logos/logo-express.png"
+               alt="Mostafa Abohamar Logo"
+               className="w-full h-full object-contain"
+             />
+           </motion.div>
         </motion.div>
 
         <motion.p
