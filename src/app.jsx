@@ -189,7 +189,7 @@ function Typewriter({ text, className = '' }) {
           animate={isInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
           transition={{ duration: 0.25, delay: i * 0.035, ease: [0.22, 1, 0.36, 1] }}
         >
-          {char === ' ' ? '\u00A0' : char}
+          {char === ' ' ? ' ' : char}
         </motion.span>
       ))}
       <motion.span
@@ -323,7 +323,7 @@ function Hero() {
           Code Is A Passion
         </motion.p>
 
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 tracking-tight">
+         <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-6 tracking-tight">
           <Typewriter text="Backend Engineer" />
         </h1>
 
